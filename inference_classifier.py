@@ -81,11 +81,11 @@ video_frame = tk.Frame(root)
 video_frame.pack(side=tk.LEFT)
 
 # Create a label for the word
-word_label = tk.Label(root, text=word, font=('Arial', 16), fg='blue')
+word_label = tk.Label(root, text=word, font=('Arial', 26), fg='blue')
 word_label.pack(side=tk.TOP, pady=10)
 
 # Create a label for the sentence
-sentence_label = tk.Label(root, text=sentence, font=('Arial', 12), fg='black')
+sentence_label = tk.Label(root, text=sentence, font=('Arial', 26), fg='black')
 sentence_label.pack(side=tk.TOP, pady=10)
 
 # Create a frame for the buttons
@@ -95,7 +95,7 @@ button_frame.pack(side=tk.LEFT, padx=20)
 # Create a label for the predicted character
 label_var = tk.StringVar()
 label_var.set('')
-predicted_label = tk.Label(button_frame, textvariable=label_var, font=('Arial', 24), fg='green')
+predicted_label = tk.Label(button_frame, textvariable=label_var, font=('Arial', 26), fg='green')
 predicted_label.pack(side=tk.TOP, pady=10)
 
 # Create buttons for adding and deleting characters, words, and sentences, and copying to clipboard
@@ -148,7 +148,7 @@ def update_gui():
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             mp_drawing.draw_landmarks(
-                frame,  # image to draw
+                frame_rgb,  # image to draw
                 hand_landmarks,  # model output
                 mp_hands.HAND_CONNECTIONS,  # hand connections
                 mp_drawing_styles.get_default_hand_landmarks_style(),
@@ -177,13 +177,13 @@ def update_gui():
         y2 = int(max(y_coords) * H) - 10
 
         # Use the trained Random Forest classifier model to predict the gesture being made based on the extracted landmark data
-        prediction = rf_model.predict(np.array([data]))
+        prediction = rf_model.predict([np.array(data)])
 
         # Update the predicted label in the GUI
-        label_var.set(label_dict[prediction[0]])
+        label_var.set(label_dict[int(prediction[0])])
 
     # Convert the frame to PIL format and resize it to fit the video label
-    frame_pil = Image.fromarray(frame)
+    frame_pil = Image.fromarray(frame_rgb)
     frame_pil = frame_pil.resize((640, 480), Image.ANTIALIAS)
 
     # Convert the PIL image to Tkinter format and display it in the video label
