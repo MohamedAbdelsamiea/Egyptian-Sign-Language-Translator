@@ -26,7 +26,6 @@ label_dict = {0: 'أ', 1: 'ب', 2: 'ت', 3: 'ث', 4: 'ج', 5: 'ح',
 word = ''
 sentence = ''
 
-
 # Define a function to add the predicted character to the word
 def add_char():
     global word
@@ -36,13 +35,11 @@ def add_char():
         label_var.set('')
         word_label.config(text=word)
 
-
 # Define a function to delete the last character from the word
 def delete_char():
     global word
     word = word[:-1]
     word_label.config(text=word)
-
 
 # Define a function to add the current word to the sentence
 def add_word():
@@ -54,7 +51,6 @@ def add_word():
         word_label.config(text=word)
         sentence_label.config(text=sentence)
 
-
 # Define a function to delete the last word from the sentence
 def delete_word():
     global sentence
@@ -62,7 +58,6 @@ def delete_word():
     if words:
         sentence = ' '.join(words[:-1]) + ' '
         sentence_label.config(text=sentence)
-
 
 # Define a function to copy the current word or sentence to the clipboard
 def copy_to_clipboard():
@@ -76,7 +71,6 @@ def copy_to_clipboard():
         root.clipboard_clear()
         root.clipboard_append(sentence)
         root.update()
-
 
 # Initialize the GUI
 root = tk.Tk()
@@ -120,11 +114,18 @@ delete_word_button.pack(side=tk.TOP, pady=10)
 copy_button = tk.Button(button_frame, text='Copy', command=copy_to_clipboard)
 copy_button.pack(side=tk.TOP, pady=10)
 
+# Create a label for the video stream
+video_label = tk.Label(video_frame)
+video_label.pack()
+
 # Initialize a video capture object using the default camera
 cap = cv2.VideoCapture(0)
 
-# Enter a loop that captures frames fromthe video stream and processes them
-while True:
+# Define a function to update the GUI
+def update_gui():
+    global word
+    global sentence
+
     # Create an empty list to store the extracted x,y coordinates for each landmark
     data = []
     x_coords = []
@@ -176,42 +177,25 @@ while True:
         y2 = int(max(y_coords) * H) - 10
 
         # Use the trained Random Forest classifier model to predict the gesture being made based on the extracted landmark data
-        predicted_label = rf_model.predict([np.asarray(data)])[0]
+        prediction = rf_model.predict(np.array([data]))
 
-        # Map the predicted output value to its corresponding label using the label_dict dictionary
-        predicted_gesture = label_dict[int(predicted_label)]
+        # Update the predicted label in the GUI
+        label_var.set(label_dict[prediction[0]])
 
-        # Update the predicted character label in the GUI
-        label_var.set(predicted_gesture)
+    # Convert the frame to PIL format and resize it to fit the video label
+    frame_pil = Image.fromarray(frame)
+    frame_pil = frame_pil.resize((640, 480), Image.ANTIALIAS)
 
-        # Draw a rectangle around the hand and display the recognized gesture label on the video frame using OpenCV
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 0), 4)
-        cv2.putText(frame, predicted_gesture, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 0), 3, cv2.LINE_AA)
+    # Convert the PIL image to Tkinter format and display it in the video label
+    video_img = ImageTk.PhotoImage(image=frame_pil)
+    video_label.config(image=video_img)
+    video_label.image = video_img
 
-    # Display the processed video frame in the GUI
-    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (600, 450))
-    img = Image.fromarray(img)
-    img = ImageTk.PhotoImage(img)
-    video_label = tk.Label(video_frame, image=img)
-    video_label.image = img
-    video_label.pack(side=tk.TOP)
+    # Call the update_gui function again after 10 milliseconds
+    root.after(10, update_gui)
 
-    # Check for key presses
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        break
-    elif key == ord('a'):
-        add_char()
-    elif key == ord('d'):
-        delete_char()
-    elif key == ord('w'):
-        add_word()
-    elif key == ord('x'):
-        delete_word()
-    elif key == ord('c'):
-        copy_to_clipboard()
+# Start the GUI update loop
+update_gui()
 
-# Release the video capture object and close all OpenCV windows
-cap.release()
-cv2.destroyAllWindows()
+# Start the Tkinter event loop
+root.mainloop()
